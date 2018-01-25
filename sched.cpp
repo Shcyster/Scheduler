@@ -5,6 +5,7 @@ This returns a pointer to a string of the form day month year hours:minutes:seco
 
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 #include <string.h>
 #include <string>
 #include <vector>
@@ -85,6 +86,8 @@ int main()
 
 			cout << "Enter Description of Task" << endl;
 			cin >> taskDescr;
+			//getline(cin, taskDescr);
+			//std::cin.getline(cin,sizeof(taskDescr));
 
 			cout << "Input due date of task in format DDMMYYYY" << endl;
 			cin >> dueDate;
@@ -92,8 +95,8 @@ int main()
 			now = time(0);                                        // get current time
 		    ltm = localtime(&now);
 		    dd = ltm->tm_mday;
-		    mm = ltm->tm_mon;
-		    yyyy = ltm->tm_year;
+		    mm = ltm->tm_mon + 1;
+		    yyyy = ltm->tm_year + 1900;
 
 		    // convert current time to julian day 
 		  	jdnstart = computejdn(dd, mm, yyyy);
@@ -149,5 +152,49 @@ int main()
 
 
 
-	} // while main loop of program
+	} // while main loop of program 
+	//cout << computejdn(11, 1, 2018) << endl;
+	//cout << computejdn(12, 1, 2018) << endl; This works
+	/*int dd;
+	int mm;
+	int yyyy;
+	time_t now;
+	tm *ltm;
+
+	now = time(0);                                        // get current time
+	ltm = localtime(&now);
+	dd = ltm->tm_mday;
+	mm = ltm->tm_mon + 1; // this is months since january
+	yyyy = ltm->tm_year + 1900; // this is years since 1900
+	cout << dd << endl;
+	cout << mm << endl;
+	cout << yyyy << endl;
+	cout << computejdn(dd, mm, yyyy) << endl;
+	int jdnstart = computejdn(dd, mm, yyyy);
+
+	int dueDate;
+	cout << "Input due date of task in format DDMMYYYY" << endl;
+			cin >> dueDate;
+	//cout << dueDate << endl;
+	int DD;
+	int MM;
+	int YYYY;
+	DD = dueDate / 1000000;
+		    MM = (dueDate % 1000000) / 10000;
+		  	YYYY = dueDate % 10000;
+	//cout << DD << endl;
+	//cout << MM << endl;
+	//cout << YYYY << endl;
+
+	int jdnend = computejdn(DD, MM, YYYY);
+	//cout << jdnend << endl;
+	char temp[20];
+	string numDays;
+		  	
+	sprintf(temp, "%d", jdnend - jdnstart);
+	cout << temp << endl;
+	numDays = (string)temp;
+	cout << numDays << endl; */
+
+
 } // main()
