@@ -1,6 +1,15 @@
 /*
 char *ctime(const time_t *time);
 This returns a pointer to a string of the form day month year hours:minutes:seconds year\n\0.
+
+Take timestamp from when user requests an action
+Needs file to store tasks, 
+needs to take white spaces in input task descriptions, 
+(#) needs to update days remaining on display 
+Make option to display line numbers for editing
+swap option using line numbers
+Priorities other than numbers (ASAP) etc
+Edit priorities option
 */
 
 #include <stdio.h>
@@ -21,6 +30,26 @@ struct widget_t {
 	int count;
 };
 
+class Element
+{
+	public:
+
+	string taskDescr;
+	int numDays;
+	bool hasNumPriority;
+
+	Element()
+	{
+		hasNumPriority = true;
+	}
+
+	Element(int a)
+	{
+		hasNumPriority = false;
+	}
+
+};
+
 int computejdn(int day, int month, int year)
 {
 	int a = floor((14 - month) / 12);
@@ -31,11 +60,39 @@ int computejdn(int day, int month, int year)
 
 } // computejdn()
 
+vector<Element> arr;
+
+// subtracts diff from all integer priorities
+void updateSched(int diff)
+{
+	for(int i = 0; i < arr.size(); i++)
+	{
+		if(arr[i].hasNumPriority)
+			arr[i].numDays -= diff;
+	} // for
+} // updateSched()
+
+void displayItemNumbers()
+{
+
+} // displayItemNumbers()
+
 
 int main()
 {
-	vector<string> arr; // array of user's to-do items
-
+	//vector<string> arr; // array of user's to-do items
+	// can calculate the day that this started running, then keep track of this day and update as required, save into file 
+	//before shutdown. Will be a glitch between days, but when printing out, it should be fine because it will update
+	time_t now;
+	tm *ltm;
+	now = time(0);                                        // get current time
+	ltm = localtime(&now);
+	int currentDay = ltm->tm_mday;
+	int currentMonth = ltm->tm_mon + 1;
+	int currentYear = ltm->tm_year + 1900;
+	Element *ep;
+	Element e;
+	
 	while (1){ // main loop of program
 	
 	// do everything after this	
@@ -47,8 +104,8 @@ int main()
 	string taskDescr;
 	string fullTaskDescr;
 	string element;
+	string dinput;
 
-	tm *ltm;
 	int dd;
 	int mm;
 	int yyyy;
@@ -56,7 +113,6 @@ int main()
 	int MM;
 	int YYYY;
 	string numDays;
-	time_t now;
 	bool leadingzero;
 
 	int a;
@@ -68,16 +124,32 @@ int main()
 
 	char temp[20];
 
+	int inserted;
+
 	cout << "\nMain Menu\n1) Display Schedule\n2) Add Item\n3) Remove Item\n4) Update Item\n" << endl;
 	cin >> command;
 
 	switch ( command ) 
 	{
 		case 1:
+			// need to update the number of days each time its printed if the day has changed
+			now = time(0);                                        // get current time
+		    ltm = localtime(&now); // How exactly does this work?
+		    dd = ltm->tm_mday;
+		    mm = ltm->tm_mon + 1;
+		    yyyy = ltm->tm_year + 1900;
+
+		    if(currentDay != dd || currentMonth != mm || currentYear != yyyy)
+		    {
+		    	updateSched(computejdn(dd, mm, yyyy) - computejdn(currentDay, currentMonth, currentYear));
+		    	currentDay = dd;
+		    	currentMonth = mm;
+		    	currentYear = yyyy;
+		    }
 
 			cout << "\n\n\n\n" << "*******************SCHEDULE*************************\n\n" << endl;
 		    for(int i = 0; i < arr.size(); i++)
-		    	cout << arr[i] << endl; // print first element of string, then rest of string
+		    	cout << "(" << arr[i].numDays << ") " << arr[i].taskDescr << endl; // print first element of string, then rest of string
 		    cout << "\n\n\n\n\n\n\n\n" << endl;
 			break;
 
@@ -93,10 +165,20 @@ int main()
 			cin >> dueDate;
 
 			now = time(0);                                        // get current time
-		    ltm = localtime(&now);
+		    ltm = localtime(&now); // How exactly does this work?
 		    dd = ltm->tm_mday;
 		    mm = ltm->tm_mon + 1;
 		    yyyy = ltm->tm_year + 1900;
+
+		    // RACE CONDITION POTENTIAL if this runs before item was inserted -> actually only the date when calculations happen is important
+		    // this makes everything in terms of the date we just calculated
+		    if(currentDay != dd || currentMonth != mm || currentYear != yyyy)
+		    {
+		    	updateSched(computejdn(dd, mm, yyyy) - computejdn(currentDay, currentMonth, currentYear));
+		    	currentDay = dd;
+		    	currentMonth = mm;
+		    	currentYear = yyyy;
+		    } // ehhh just set current times when starts, and update as you go through? if nothing entered, update doesnt do anything -> fine
 
 		    // convert current time to julian day 
 		  	jdnstart = computejdn(dd, mm, yyyy);
@@ -108,26 +190,88 @@ int main()
 		  	jdnend = computejdn(DD, MM, YYYY);
 		  	
 		  	sprintf(temp, "%d", jdnend - jdnstart);
-		  	numDays = (string)temp;
+		    numDays = (string)temp;                        // ummm
 
 			element = "(" + numDays + ") " + taskDescr;
-			arr.push_back(element);
-			cout << "Element added\n" << endl; 
+
+			ep = new Element();
+			e = *ep;
+			e.taskDescr = taskDescr;
+			e.numDays = jdnend - jdnstart;
+
+			//arr.push_back(element);
+			inserted = 0;
+			if(!arr.empty())
+			{
+				for(int i = 0; i < arr.size(); i++)
+				{
+					// for each string in arr, extract the nuDays
+				
+					/*string tempdays = "";
+					int j = 1;
+					while(arr[i].substr(j,1).compare(")") != 0)
+					{
+						tempdays += arr[i].substr(j,1);
+						j++;
+					}
+					stringstream geek(tempdays); // convert string to int
+					int x;						 // ""
+					geek >> x;					 // ""
+					cout << x << endl;*/
+
+					if(arr[i].numDays > jdnend - jdnstart) // if tempdays casted to an int is bigger than numDays, place element here (before)
+					{	
+						arr.insert(arr.begin() + i, e);// place here and move everything else back one
+						inserted = 1;
+						break;
+					}
+				}
+			}
+			else
+			{
+				arr.push_back(e);
+				inserted = 1;
+			}
+			if(inserted == 0)
+				arr.push_back(e);
+			cout << "Element added\n" << endl;
+			//sort(arr.begin(), arr.end()); 
 			break;
 
 
 		case 3:
 
-			//cout << "hi" << endl;
+			// Ask user what item he/she wants removed, and remove it
+			cout << "Which item number would you like deleted? (Enter 'd' to display item numbers)" << endl;
+			cin >> dinput;
+
+			if(dinput == "d")
+				displayItemNumbers();
+			else
+			{ // cast dinput into an int and delete arr[dinput]
+				stringstream geek(dinput); // convert string to int
+				int x;						 // ""
+				geek >> x;					 // ""
+				arr.erase(arr.begin() + x);
+				cout << "Item number " << x << " deleted" << endl;
+			}
+
 			break;
 
 
 		case 4:
 
-			// case 4
+			// Ask user what item he/she wants updated, and update it
 
 			break;
 
+
+		// hidden test updateSched()
+		/*case 5:
+
+			updateSched(3);
+			cout << "Schedule updated by 3 days" << endl;
+			break;*/
 
 		default:
 		
